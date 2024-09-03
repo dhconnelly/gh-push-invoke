@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -14,13 +15,20 @@ var (
 	action = flag.String("action", "false", "command to invoke on webhook")
 )
 
-func update(w http.ResponseWriter, r *http.Request) {
-	log.Printf("webook received, invoking: %s\n", *action)
+func run() {
+	log.Printf("running action in goroutine: %s\n", *action)
 	args := strings.Split(*action, " ")
 	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func update(w http.ResponseWriter, r *http.Request) {
+	log.Printf("webook received, invoking action\n")
+	go run()
 	w.WriteHeader(200)
 }
 
